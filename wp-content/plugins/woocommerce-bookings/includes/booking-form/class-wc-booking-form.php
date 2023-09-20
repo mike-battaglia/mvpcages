@@ -174,7 +174,7 @@ class WC_Booking_Form {
 				case 'month':
 					if ( $this->product->get_duration() > 1 ) {
 						/* translators: %s: product duration in months */
-						$after = sprintf( __( '&times; %s Months', 'woocommerce-bookings' ), $this->product->get_duration() );
+						$after = sprintf( __( '× %s Months', 'woocommerce-bookings' ), $this->product->get_duration() );
 					} else {
 						$after = __( 'Month(s)', 'woocommerce-bookings' );
 					}
@@ -182,7 +182,7 @@ class WC_Booking_Form {
 				case 'week':
 					if ( $this->product->get_duration() > 1 ) {
 						/* translators: %s: product duration in weeks */
-						$after = sprintf( __( '&times; %s weeks', 'woocommerce-bookings' ), $this->product->get_duration() );
+						$after = sprintf( __( '× %s weeks', 'woocommerce-bookings' ), $this->product->get_duration() );
 					} else {
 						$after = __( 'Week(s)', 'woocommerce-bookings' );
 					}
@@ -191,7 +191,7 @@ class WC_Booking_Form {
 					if ( $this->product->get_duration() % 7 ) {
 						if ( $this->product->get_duration() > 1 ) {
 							/* translators: %s product duration in days */
-							$after = sprintf( __( '&times; %s days', 'woocommerce-bookings' ), $this->product->get_duration() );
+							$after = sprintf( __( '× %s days', 'woocommerce-bookings' ), $this->product->get_duration() );
 						} else {
 							$after = __( 'Day(s)', 'woocommerce-bookings' );
 						}
@@ -200,14 +200,14 @@ class WC_Booking_Form {
 							$after = __( 'Week(s)', 'woocommerce-bookings' );
 						} else {
 							/* translators: %s: product duration in weeks */
-							$after = sprintf( __( '&times; %s weeks', 'woocommerce-bookings' ), $this->product->get_duration() / 7 );
+							$after = sprintf( __( '× %s weeks', 'woocommerce-bookings' ), $this->product->get_duration() / 7 );
 						}
 					}
 					break;
 				case 'night':
 					if ( $this->product->get_duration() > 1 ) {
 						/* translators: %s: product duration in nights */
-						$after = sprintf( __( '&times; %s nights', 'woocommerce-bookings' ), $this->product->get_duration() );
+						$after = sprintf( __( '× %s nights', 'woocommerce-bookings' ), $this->product->get_duration() );
 					} else {
 						$after = __( 'Night(s)', 'woocommerce-bookings' );
 					}
@@ -215,7 +215,7 @@ class WC_Booking_Form {
 				case 'hour':
 					if ( $this->product->get_duration() > 1 ) {
 						/* translators: %s: product duration in hours */
-						$after = sprintf( __( '&times; %s hours', 'woocommerce-bookings' ), $this->product->get_duration() );
+						$after = sprintf( __( '× %s hours', 'woocommerce-bookings' ), $this->product->get_duration() );
 					} else {
 						$after = __( 'Hour(s)', 'woocommerce-bookings' );
 					}
@@ -223,7 +223,7 @@ class WC_Booking_Form {
 				case 'minute':
 					if ( $this->product->get_duration() > 1 ) {
 						/* translators: %s: product duration in minutes */
-						$after = sprintf( __( '&times; %s minutes', 'woocommerce-bookings' ), $this->product->get_duration() );
+						$after = sprintf( __( '× %s minutes', 'woocommerce-bookings' ), $this->product->get_duration() );
 					} else {
 						$after = __( 'Minute(s)', 'woocommerce-bookings' );
 					}
@@ -515,13 +515,42 @@ class WC_Booking_Form {
 	public function get_start_time_html( $blocks, $intervals = array(), $resource_id = 0, $from = 0, $to = 0 ) {
 		$transient_name   = 'book_st_' . md5( http_build_query( array( $from, $to, $this->product->get_id(), $resource_id ) ) );
 		$st_block_html    = WC_Bookings_Cache::get( $transient_name );
-		$available_blocks = wc_bookings_get_time_slots( $this->product, $blocks, $intervals, $resource_id, $from, $to );
+		/* MBATT: the original $available_blocks declaration:
+		 * $available_blocks = wc_bookings_get_time_slots( $this->product, $blocks, $intervals, $resource_id, $from, $to );
+		 */
+		
+		// MBATT: add a new old_available_blocks variable
+		$old_available_blocks = wc_bookings_get_time_slots( $this->product, $blocks, $intervals, $resource_id, $from, $to );
+		 
 		$escaped_blocks   = function_exists( 'wc_esc_json' ) ? wc_esc_json( wp_json_encode( $blocks ) ) : _wp_specialchars( wp_json_encode( $blocks ), ENT_QUOTES, 'UTF-8', true );
 		$block_html       = '';
 		$block_html      .= '<div class="wc-bookings-start-time-container" data-product-id="' . esc_attr( $this->product->get_id() ) . '" data-blocks="' . $escaped_blocks . '">';
 		$block_html      .= '<label for="wc-bookings-form-start-time">' . esc_html__( 'Starts', 'woocommerce-bookings' ) . '</label>';
 		$block_html      .= '<select id="wc-bookings-form-start-time" name="start_time">';
 		$block_html      .= '<option value="0">' . esc_html__( 'Start time', 'woocommerce-bookings' ) . '</option>';
+
+		// 🟢🟢🟢 START MBATT'S CUSTOM START-TIME FILTER
+		function filterAvailableBlocks($old_available_blocks) {
+			$mbatt_available_blocks = array();
+
+			foreach($old_available_blocks as $timestamp => $block_info) {
+				if($block_info['booked'] <= 0) {
+					$mbatt_available_blocks[$timestamp] = $block_info;
+				}
+			}
+
+			return $mbatt_available_blocks;
+		}
+
+		if ( $this->product->get_id() === 601 ) {
+			$mbatt_available_blocks = filterAvailableBlocks($old_available_blocks);
+			//echo '💃';
+		} else {
+			$mbatt_available_blocks = $old_available_blocks;
+		}
+				
+		$available_blocks = $mbatt_available_blocks;
+		// 🔴🔴🔴 END MBATT'S CUSTOM START-TIME FILTER
 
 		$booking_slots_transient_keys = array_filter( (array) WC_Bookings_Cache::get( 'booking_slots_transient_keys' ) );
 
@@ -557,7 +586,7 @@ class WC_Booking_Form {
 		}
 
 		$block_html .= $st_block_html;
-		$block_html .= '</select></div>&nbsp;&nbsp;';
+		$block_html .= '</select></div>  ';
 
 		return $block_html;
 	}
@@ -599,7 +628,7 @@ class WC_Booking_Form {
 		if ( $check ) {
 			$intervals        = array( $min_duration * $base_interval, $base_interval );
 			$available_blocks = wc_bookings_get_total_available_bookings_for_range( $this->product, $start_time, $first_time_slot, $resource_id, 1, $intervals );
-
+				
 			return ! is_wp_error( $available_blocks ) && $available_blocks && in_array( $start_time, $blocks );
 		}
 
@@ -682,7 +711,7 @@ class WC_Booking_Form {
 		$block_html .= '<option value="0">' . esc_html__( 'End time', 'woocommerce-bookings' ) . '</option>';
 
 		$data = $this->get_end_times( $blocks, $start_date_time, $intervals, $resource_id, $from, $to );
-
+		
 		foreach ( $data as $booking_data ) {
 			$display  = $booking_data['display'];
 			$end_time = $booking_data['end_time'];
@@ -706,6 +735,17 @@ class WC_Booking_Form {
 					$free_slots = $availability[ $resource_id ];
 				}
 
+					// 🟢🟢🟢 START MBATT'S CUSTOM END-TIME FILTER
+					if ( $this->product->get_id() === 601 ) {
+						if ($free_slots > 3) {
+							$display .= sprintf( ' Available');
+							//echo '🎉';
+						} else {
+							continue;
+						}
+					}
+				} else {
+				// 🔴🔴🔴 END MBATT'S CUSTOM END-TIME FILTER
 				$display .= sprintf( ' (%s %s)', $free_slots, esc_html__( 'left', 'woocommerce-bookings' ) );
 			}
 
