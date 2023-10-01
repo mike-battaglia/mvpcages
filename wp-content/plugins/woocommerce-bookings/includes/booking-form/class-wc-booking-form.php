@@ -527,7 +527,7 @@ class WC_Booking_Form {
 		
 		
 		//🟢 MBATT CUSTOM START TIME
-		if ($this->product->get_id() === 601) {
+		if ($this->product->get_id() === 642) {
 			// echo '🟢';
 			WC_Bookings_Cache::delete( $transient_name );
 			// print_r($original_available_blocks);
@@ -732,7 +732,7 @@ class WC_Booking_Form {
 				}
 				
 				//🟢 MBATT CUSTOM END TIME
-				if ($this->product->get_id() === 601) {				
+				if ($this->product->get_id() === 642) {				
 					if ($free_slots < 4) {
 						continue;
 					}
